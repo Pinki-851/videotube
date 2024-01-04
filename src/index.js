@@ -4,9 +4,10 @@ import { connectDB } from "./db/index.js";
 
 const PROT = process.env.PROT || 8000;
 dotenv.config();
+
 connectDB()
   .then(() => {
-    app.on((err) => {
+    app.on("error", (err) => {
       console.log("app error", err);
     });
     app.listen(PROT, () => {
@@ -14,5 +15,5 @@ connectDB()
     });
   })
   .catch((err) => {
-    console.log("server error");
+    console.log("server error", err);
   });

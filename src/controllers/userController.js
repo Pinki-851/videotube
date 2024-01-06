@@ -4,7 +4,29 @@ import { APIResponse } from "../utils/apiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 
-export const userRegistration = asyncHandler(async (req, res) => {
+const generateAccessAndRefreshToken = async (userID) => {
+  try {
+    console.log("userid", userID);
+    const user = await User.findById(userID);
+    // console.log("user", user);
+
+    const accessToken = await user.generateAccessToken();
+    const refreshToken = await user.generateRefreshToken();
+
+    console.log("user", user, accessToken);
+    user.refreshToken = refreshToken;
+
+    user.save({ validateBeforeSave: false });
+    return { accessToken, refreshToken };
+  } catch (error) {
+    throw new ApiError(
+      500,
+      "Somethin went wrong while creating Access token and refresh token"
+    );
+  }
+};
+
+const userRegistration = asyncHandler(async (req, res) => {
   const { username, email, fullname, password } = req.body;
   if (
     [username, email, fullname, password]?.some((field) => field?.trim() === "")
@@ -25,7 +47,6 @@ export const userRegistration = asyncHandler(async (req, res) => {
   }
   const avatar = await uploadOnCloudinary(avatarLoaclPath);
   const cover = await uploadOnCloudinary(coverLocalPath);
-  console.log("controller-avatar", avatar);
 
   if (!avatar) {
     throw new ApiError(400, "Avatar is required");
@@ -52,3 +73,70 @@ export const userRegistration = asyncHandler(async (req, res) => {
     .status(201)
     .json(new APIResponse(200, createdUser, "user registered successfully"));
 });
+
+const loginUser = asyncHandler(async (req, res) => {
+  const { email, username, password } = req.body;
+
+  if (!email && !username) {
+    throw new ApiError(400, "username or email is required");
+  }
+  const user = await User.findOne({ $or: [{ email }, { username }] });
+
+  if (!user) {
+    throw new ApiError(404, "User does not exist");
+  }
+
+  if (!password) {
+    throw new ApiError(400, "Password is required");
+  }
+  const validPass = await user.isPasswordCorrect(password);
+  if (!validPass) {
+    throw new ApiError(400, "invalid credential");
+  }
+
+  // if username and password is correct povid token
+  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
+    user._id
+  );
+
+  const loggedInUser = await User.findById(user?._id);
+
+  const options = {
+    httpOnly: true,
+    secure: true,
+  };
+  return res
+    .status(200)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
+    .json(
+      new APIResponse(
+        200,
+        { user: loggedInUser, accessToken },
+        "User loggedin successfully"
+      )
+    );
+});
+
+const logout = asyncHandler(async (req, res) => {
+  await User.findByIdAndUpdate(
+    req.user?._id,
+    {
+      $set: { refreshToken: undefined },
+    },
+    { new: true }
+  );
+
+  // cookie option
+  const options = {
+    httpOnly: true,
+    secure: true,
+  };
+  return res
+    .status(200)
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken", options)
+    .json(new APIResponse(200, {}, "User logged out"));
+});
+
+export { loginUser, logout, userRegistration };

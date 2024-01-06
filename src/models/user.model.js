@@ -57,24 +57,40 @@ userSchema.methods.isPasswordCorrect = async function (password) {
 };
 
 userSchema.methods.generateAccessToken = async function () {
-  return await jwt.sign(
+  console.log(
+    "generate",
+    this.email,
+    process.env.TOKEN_SECRET,
+    this.fullname
+    // jwt.sign(
+    //   {
+    //     _id: this._id,
+    //     email: this.email,
+    //     username: this.username,
+    //     fullname: this.fullname,
+    //   },
+    //   process.env.TOKAN_SECRET,
+    //   { expiresIn: process.env.TOKAN_EXPIRY }
+    // )
+  );
+  return jwt.sign(
     {
       _id: this._id,
       email: this.email,
       username: this.username,
       fullname: this.fullname,
     },
-    process.env.TOKAN_SECRET,
-    { expiresIn: process.env.TOKAN_EXPIRY }
+    process.env.TOKEN_SECRET,
+    { expiresIn: process.env.TOKEN_EXPIRY }
   );
 };
 userSchema.methods.generateRefreshToken = async function () {
-  return await jwt.sign(
+  return jwt.sign(
     {
       _id: this._id,
     },
-    process.env.REFERESH_TOKEN,
-    { expiresIn: process.env.REFERESH_TOKEN }
+    process.env.REFERESH_TOKEN_SECRET,
+    { expiresIn: process.env.REFERESH_TOKEN_EXPIRY }
   );
 };
 

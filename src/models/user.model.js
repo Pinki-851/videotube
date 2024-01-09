@@ -57,22 +57,6 @@ userSchema.methods.isPasswordCorrect = async function (password) {
 };
 
 userSchema.methods.generateAccessToken = async function () {
-  console.log(
-    "generate",
-    this.email,
-    process.env.TOKEN_SECRET,
-    this.fullname
-    // jwt.sign(
-    //   {
-    //     _id: this._id,
-    //     email: this.email,
-    //     username: this.username,
-    //     fullname: this.fullname,
-    //   },
-    //   process.env.TOKAN_SECRET,
-    //   { expiresIn: process.env.TOKAN_EXPIRY }
-    // )
-  );
   return jwt.sign(
     {
       _id: this._id,

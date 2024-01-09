@@ -1,7 +1,12 @@
 import { Router } from "express";
 import {
+  changePassword,
+  getCurrentUserDetail,
   loginUser,
   logout,
+  refreshToken,
+  updateAvatar,
+  updateUserDetail,
   userRegistration,
 } from "../controllers/userController.js";
 import { verifyJWT } from "../middlewares/auth.js";
@@ -18,7 +23,20 @@ router.route("/register").post(
 );
 
 router.route("/login").post(loginUser);
+router.route("/refresh-token").post(refreshToken);
 
 // secured route
 router.route("/logout").post(verifyJWT, logout);
+router.route("/change-password").post(verifyJWT, changePassword);
+router.route("/get-current-userdetail").get(verifyJWT, getCurrentUserDetail);
+router.route("/update-userdetail").put(verifyJWT, updateUserDetail);
+router.route("/update-image").put(
+  verifyJWT,
+  upload.fields([
+    { name: "avatar", maxCount: 1 },
+    { name: "coverImage", maxCount: 1 },
+  ]),
+  updateAvatar
+);
+
 export default router;
